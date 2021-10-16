@@ -1,2 +1,3 @@
-# Flex
-Bicep Experiments
+# BicepFlex
+
+Azure Bicep experiments with basic Azure Functions App.
