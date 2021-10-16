@@ -1,0 +1,37 @@
+name: Build .NET Core Function App
+
+on: [push, workflow_dispatch]
+
+env:
+  API_NAME: bicepflex
+  API_CODE_PATH: './src/api'
+  API_OUTPUT_PATH: '${{ github.workspace }}/.output-api'
+  API_DOTNET_VERSION: '3.1.x'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the repo
+      - uses: actions/checkout@main
+
+      # Setup .NET Core
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: ${{ env.API_DOTNET_VERSION }} 
+      
+      # Run dotnet to build/publish the API FunctionApp
+      - name: Publish API
+        run: |
+          pushd './${{ env.API_CODE_PATH }}'
+          dotnet publish BicepFlex.API.csproj --configuration Release --output ${{ env.API_OUTPUT_PATH }}
+          popd
+
+      # Upload the API Artifact
+      - name: 'Upload API FunctionApp Artifact'
+        uses: actions/upload-artifact@v1
+        with:
+          name: api-artifact
+          path: ${{ env.API_OUTPUT_PATH }}
