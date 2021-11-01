@@ -109,16 +109,14 @@ jobs:
       - name: Publish API
         run: |
           pushd './${{ env.API_CODE_PATH }}'
-          dotnet publish BicepFlex.API.csproj --configuration Release --output ${{ env.API_PUBLISH_PATH }}/bin
+          dotnet publish BicepFlex.API.csproj --configuration Release --output ${{ env.API_PUBLISH_PATH }}/dist
           popd
 
-      - name: Archive Release
-        uses: thedoctor0/zip-release@master
-        with:
-          type: zip
-          path: ${{ env.API_PUBLISH_PATH }}/bin
-          directory: ${{ env.API_PUBLISH_PATH }}/zip
-          filename: ${{ env.API_NAME }}.zip
+      - name: "Create ZIP"
+        shell: pwsh
+        run: |
+          New-Item -Path '${{ env.API_PUBLISH_PATH }}/zip' -ItemType Directory
+          Get-ChildItem ${{ env.API_PUBLISH_PATH }}/dist | Compress-Archive -Destination ${{ env.API_PUBLISH_PATH }}/zip/${{ env.API_NAME }}.zip
 
       # Upload the API Artifact
       - name: 'Upload API FunctionApp Artifact'
