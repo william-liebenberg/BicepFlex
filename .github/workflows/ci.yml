@@ -32,7 +32,7 @@ jobs:
         $rgExists = az group exists -n ${{ env.AZURE_RESOURCEGROUP_NAME }}
         if ($rgExists -eq $false) {
           Write-Host "🔨 Creating Resource Group ${{ env.AZURE_RESOURCEGROUP_NAME }}" -ForegroundColor Yellow
-          $result = az group create -l ${{ env.AZURE_RESOURCEGROUP_LOCATION }} -n $resourceGroup
+          $result = az group create -l ${{ env.AZURE_RESOURCEGROUP_LOCATION }} -n ${{ env.AZURE_RESOURCEGROUP_NAME }}
           if (!$?) {
             Write-Host "❌ Could not create Resource Group ${{ env.AZURE_RESOURCEGROUP_NAME }}" -ForegroundColor Red
             Write-Host $result -ForegroundColor Red
