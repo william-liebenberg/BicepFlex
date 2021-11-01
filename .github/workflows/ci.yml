@@ -3,12 +3,13 @@ name: Build .NET Core Function App
 on: [push, workflow_dispatch]
 
 env:
+  AZURE_RESOURCEGROUP_NAME: BicepFlexTest
+  AZURE_RESOURCEGROUP_LOCATION: australiaeast
   API_NAME: bicepflex
   API_CODE_PATH: './src/api'
   API_OUTPUT_PATH: '${{ github.workspace }}/.output-api'
+  API_ZIP_PATH: '${{ github.workspace }}/.zip-api'
   API_DOTNET_VERSION: '3.1.x'
-  AZURE_RESOURCEGROUP_NAME: BicepFlexTest
-  AZURE_RESOURCEGROUP_LOCATION: australiaeast
 
 jobs:
   lint_infra: 
@@ -72,6 +73,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: [preview_infra]
     environment: test
+    outputs:
+      functionAppName: ${{ steps.deploy.outputs.functionAppName }}
     steps:
     - uses: actions/checkout@v2
     - uses: azure/login@v1
@@ -80,13 +83,16 @@ jobs:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
     - name: Deploy to Test resource group
+      id: deploy
       shell: pwsh
       run: |
-        az deployment group create `
+        $deployment = (az deployment group create `
           -g ${{ env.AZURE_RESOURCEGROUP_NAME }} `
           --mode Incremental `
           --template-file .azure/azureDeploy.bicep `
-          --parameters .azure/parameters.json
+          --parameters .azure/parameters.json)
+        
+        Write-Host $deployment 
 
   build_app:
     runs-on: ubuntu-latest
@@ -107,9 +113,41 @@ jobs:
           dotnet publish BicepFlex.API.csproj --configuration Release --output ${{ env.API_OUTPUT_PATH }}
           popd
 
+      - name: "Create ZIP"
+        shell: pwsh
+        run: |
+          Get-ChildItem ${{ env.API_OUTPUT_PATH }} | Compress-Archive -Destination ${{ env.API_ZIP_PATH }}/${{ env.API_NAME }}.zip
+
       # Upload the API Artifact
       - name: 'Upload API FunctionApp Artifact'
         uses: actions/upload-artifact@v1
         with:
-          name: api-artifact
+          name: ${{ env.API_NAME }}-artifact
           path: ${{ env.API_OUTPUT_PATH }}
+
+  deploy_app:
+    runs-on: ubuntu-latest
+    needs: [deploy_infra, build_app]
+    steps:
+      # Checkout the repo
+      - uses: actions/checkout@main
+
+      # Get the funcapp zip artifact
+      - name: Download Function App artifact
+        uses: actions/download-artifact@v1
+        with:
+          name: funcapp
+          path: ${{ env.API_ZIP_PATH }}
+      
+      # Log into Azure
+      - uses: azure/login@v1
+        name: Sign in to Azure
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      # Upload the funcapp zip artifact to Azure 
+      - name: "Upload FunctionApp"
+        uses: Azure/functions-action@v1.4.4
+        with:
+          app-name: ${{needs.deploy_infra.outputs.functionAppName}}
+          package: ${{ env.API_ZIP_PATH }}
