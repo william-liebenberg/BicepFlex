@@ -96,11 +96,7 @@ jobs:
           --template-file .azure/azureDeploy.bicep `
           --parameters .azure/parameters.json --query properties.outputs) | ConvertFrom-Json
 
-        Write-Host "Outputs: $($outputs)"
-        Write-Host "FunctionAppName: $($outputs.functionAppName)"
-        Write-Host "FunctionAppName value: $($outputs.functionAppName.value)"
-
-        Write-Output "::set-output name=functionAppName::$outputs.functionAppName.value"
+        Write-Output "::set-output name=functionAppName::$($outputs.functionAppName.value)"
 
   BuildApp:
     name: Build Function App
