@@ -7,8 +7,8 @@ env:
   AZURE_RESOURCEGROUP_LOCATION: australiaeast
   API_NAME: bicepflex
   API_CODE_PATH: './src/api'
-  API_OUTPUT_PATH: '${{ github.workspace }}/.output-api'
-  API_ZIP_PATH: '${{ github.workspace }}/.zip-api'
+  API_OUTPUT_PATH: '${{ github.workspace }}/output-api'
+  API_ZIP_PATH: '${{ github.workspace }}/zip-api'
   API_DOTNET_VERSION: '3.1.x'
 
 jobs:
