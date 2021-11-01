@@ -11,7 +11,8 @@ env:
   API_DOTNET_VERSION: '3.1.x'
 
 jobs:
-  lint_infra: 
+  LintInfra: 
+    name: Check best practices (Bicep Linter)
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -19,7 +20,8 @@ jobs:
       run: |
         az bicep build --file .azure/azureDeploy.bicep
   
-  validate_infra: 
+  ValidateInfra: 
+    name: Validate resources
     runs-on: ubuntu-latest
     steps: 
     - uses: azure/login@v1
@@ -51,9 +53,10 @@ jobs:
           --template-file .azure/azureDeploy.bicep `
           --parameters .azure/parameters.json
 
-  preview_infra:
+  PreviewInfra:
+    name: Preview changes (What-if)
     runs-on: ubuntu-latest
-    needs: [lint_infra, validate_infra]
+    needs: [LintInfra, ValidateInfra]
     steps:
     - uses: azure/login@v1
       name: Sign in to Azure
@@ -68,9 +71,10 @@ jobs:
           --template-file .azure/azureDeploy.bicep `
           --parameters .azure/parameters.json
 
-  deploy_infra:
+  DeployInfra:
+    name: Deploy Infrastructure (TEST)
     runs-on: ubuntu-latest
-    needs: [preview_infra]
+    needs: [PreviewInfra]
     environment: test
     outputs:
       functionAppName: ${{ steps.deploy.outputs.functionAppName }}
@@ -98,7 +102,8 @@ jobs:
 
         Write-Output "::set-output name=functionAppName::$outputs.functionAppName.value"
 
-  build_app:
+  BuildApp:
+    name: Build Function App
     runs-on: ubuntu-latest
     steps:
       # Checkout the repo
@@ -130,9 +135,10 @@ jobs:
           name: ${{ env.API_NAME }}-artifact
           path: ${{ env.API_PUBLISH_PATH }}/zip
 
-  deploy_app:
+  DeployApp:
+    name: Deploy Function App (TEST)
     runs-on: ubuntu-latest
-    needs: [deploy_infra, build_app]
+    needs: [DeployInfra, BuildApp]
     steps:
       # Log into Azure
       - uses: azure/login@v1
@@ -154,5 +160,5 @@ jobs:
       - name: "Upload FunctionApp"
         uses: Azure/functions-action@v1.4.4
         with:
-          app-name: ${{needs.deploy_infra.outputs.functionAppName}}
+          app-name: ${{ needs.DeployInfra.outputs.functionAppName }}
           package: ${{ env.API_PUBLISH_PATH }}
