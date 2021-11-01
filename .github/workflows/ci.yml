@@ -73,7 +73,7 @@ jobs:
     needs: [preview_infra]
     environment: test
     outputs:
-      functionAppName: ${{ steps.deploy.outputs.functionAppName }}
+      functionAppName: ${{ steps.deploy.outputs.functionAppName.value }}
     steps:
     - uses: azure/login@v1
       name: Sign in to Azure
