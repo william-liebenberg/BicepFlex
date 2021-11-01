@@ -86,13 +86,11 @@ jobs:
       id: deploy
       shell: pwsh
       run: |
-        $deployment = (az deployment group create `
+        az deployment group create `
           -g ${{ env.AZURE_RESOURCEGROUP_NAME }} `
           --mode Incremental `
           --template-file .azure/azureDeploy.bicep `
-          --parameters .azure/parameters.json)
-        
-        Write-Host $deployment 
+          --parameters .azure/parameters.json --query properties.outputs
 
   build_app:
     runs-on: ubuntu-latest
