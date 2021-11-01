@@ -11,7 +11,7 @@ env:
   AZURE_RESOURCEGROUP_LOCATION: australiaeast
 
 jobs:
-  lint: 
+  lint_infra: 
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -19,7 +19,7 @@ jobs:
       run: |
         az bicep build --file .azure/azureDeploy.bicep
   
-  validate: 
+  validate_infra: 
     runs-on: ubuntu-latest
     steps: 
     - uses: actions/checkout@v2
@@ -51,9 +51,27 @@ jobs:
           --template-file .azure/azureDeploy.bicep `
           --parameters .azure/parameters.json
 
-  deploy:
+  preview_infra:
     runs-on: ubuntu-latest
-    needs: [lint, validate]
+    needs: [lint_infra, validate_infra]
+    steps:
+    - uses: actions/checkout@v2
+    - uses: azure/login@v1
+      name: Sign in to Azure
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    - name: Run what-if
+      shell: pwsh
+      run: |
+        az deployment group what-if `
+          -g ${{ env.AZURE_RESOURCEGROUP_NAME }} `
+          --template-file .azure/azureDeploy.bicep `
+          --parameters .azure/parameters.json
+
+  deploy_infra:
+    runs-on: ubuntu-latest
+    needs: [preview_infra]
+    environment: test
     steps:
     - uses: actions/checkout@v2
     - uses: azure/login@v1
@@ -70,9 +88,8 @@ jobs:
           --template-file .azure/azureDeploy.bicep `
           --parameters .azure/parameters.json
 
-  build:
+  build_app:
     runs-on: ubuntu-latest
-    needs: [deploy]
     steps:
       # Checkout the repo
       - uses: actions/checkout@main
