@@ -26,23 +26,8 @@ jobs:
     - uses: azure/login@v1
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
-    - shell: pwsh
-      run: |
-        az deployment group validate `
-          -g ${{ env.AZURE_RESOURCEGROUP_NAME }} `
-          --template-file .azure/azureDeploy.bicep `
-          --parameters .azure/parameters.json
-
-  deploy:
-    runs-on: ubuntu-latest
-    needs: [lint, validate]
-    steps:
-    - uses: actions/checkout@v2
-    - uses: azure/login@v1
-      name: Sign in to Azure
-      with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
-    - shell: pwsh
+    - name: Ensure test resource group exists
+      shell: pwsh
       run: |
         $rgExists = az group exists -n ${{ env.AZURE_RESOURCEGROUP_NAME }}
         if ($rgExists -eq $false) {
@@ -58,7 +43,27 @@ jobs:
         else {
           Write-Host "✅ Resource Group ${{ env.AZURE_RESOURCEGROUP_NAME }} Exists" -ForegroundColor Green
         }
-        
+    - name: Validate Bicep
+      shell: pwsh
+      run: |
+        az deployment group validate `
+          -g ${{ env.AZURE_RESOURCEGROUP_NAME }} `
+          --template-file .azure/azureDeploy.bicep `
+          --parameters .azure/parameters.json
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [lint, validate]
+    steps:
+    - uses: actions/checkout@v2
+    - uses: azure/login@v1
+      name: Sign in to Azure
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Deploy to Test resource group
+      shell: pwsh
+      run: |
         az deployment group create `
           -g ${{ env.AZURE_RESOURCEGROUP_NAME }} `
           --mode Incremental `
