@@ -28,7 +28,7 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2021-06-01' = {
 }
 
 var funcAppHostingPlanName = functionAppName
-resource funcAppHostingPlan 'Microsoft.Web/serverfarms@2021-02-01' = {
+resource funcAppHostingPlan 'Microsoft.Web/serverfarms@2021-01-15' = {
   name: funcAppHostingPlanName
   location: location
   sku: {
@@ -38,9 +38,13 @@ resource funcAppHostingPlan 'Microsoft.Web/serverfarms@2021-02-01' = {
     family: 'Y'
     capacity: 0
   }
+  kind: 'functionapp'
+  properties: {
+    reserved: true
+  }
 }
 
-resource functionApp 'Microsoft.Web/sites@2021-02-01' = {
+resource functionApp 'Microsoft.Web/sites@2021-01-15' = {
   name: functionAppName
   location: location
   kind: 'functionapp,linux'
