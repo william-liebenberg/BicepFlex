@@ -3,15 +3,77 @@ name: Build .NET Core Function App
 on: [push, workflow_dispatch]
 
 env:
+  AZURE_RESOURCEGROUP_NAME: BicepFlexTest
+  AZURE_RESOURCEGROUP_LOCATION: australiaeast
   API_NAME: bicepflex
   API_CODE_PATH: './src/api'
-  API_OUTPUT_PATH: '${{ github.workspace }}/.output-api'
+  API_PUBLISH_PATH: '${{ github.workspace }}/publish'
   API_DOTNET_VERSION: '3.1.x'
 
 jobs:
-  build:
+  LintInfra: 
+    name: Check best practices (Bicep Linter)
     runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - shell: pwsh
+      run: |
+        az bicep build --file .azure/azureDeploy.bicep
+  
+  ValidateInfra: 
+    name: Validate resources
+    runs-on: ubuntu-latest
+    steps: 
+    - uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    - uses: actions/checkout@v2
+    - name: Ensure test resource group exists
+      shell: pwsh
+      run: |
+        $rgExists = az group exists -n ${{ env.AZURE_RESOURCEGROUP_NAME }}
+        if ($rgExists -eq $false) {
+          Write-Host "🔨 Creating Resource Group ${{ env.AZURE_RESOURCEGROUP_NAME }}" -ForegroundColor Yellow
+          $result = az group create -l ${{ env.AZURE_RESOURCEGROUP_LOCATION }} -n ${{ env.AZURE_RESOURCEGROUP_NAME }}
+          if (!$?) {
+            Write-Host "❌ Could not create Resource Group ${{ env.AZURE_RESOURCEGROUP_NAME }}" -ForegroundColor Red
+            Write-Host $result -ForegroundColor Red
+            return $false;
+          }
+          Write-Host "✅ Created Resource Group ${{ env.AZURE_RESOURCEGROUP_NAME }}" -ForegroundColor Green
+        }
+        else {
+          Write-Host "✅ Resource Group ${{ env.AZURE_RESOURCEGROUP_NAME }} Exists" -ForegroundColor Green
+        }
+    - name: Validate Bicep
+      shell: pwsh
+      run: |
+        az deployment group validate `
+          -g ${{ env.AZURE_RESOURCEGROUP_NAME }} `
+          --template-file .azure/azureDeploy.bicep `
+          --parameters .azure/parameters.json
 
+  PreviewInfra:
+    name: Preview changes (What-if)
+    runs-on: ubuntu-latest
+    needs: [LintInfra, ValidateInfra]
+    steps:
+    - uses: azure/login@v1
+      name: Sign in to Azure
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    - uses: actions/checkout@v2
+    - name: Run what-if
+      shell: pwsh
+      run: |
+        az deployment group what-if `
+          -g ${{ env.AZURE_RESOURCEGROUP_NAME }} `
+          --template-file .azure/azureDeploy.bicep `
+          --parameters .azure/parameters.json
+
+  BuildApp:
+    name: Build Function App
+    runs-on: ubuntu-latest
     steps:
       # Checkout the repo
       - uses: actions/checkout@main
@@ -26,12 +88,135 @@ jobs:
       - name: Publish API
         run: |
           pushd './${{ env.API_CODE_PATH }}'
-          dotnet publish BicepFlex.API.csproj --configuration Release --output ${{ env.API_OUTPUT_PATH }}
+          dotnet publish BicepFlex.API.csproj --configuration Release --output ${{ env.API_PUBLISH_PATH }}
           popd
+
+      - name: "Create ZIP"
+        shell: pwsh
+        run: |
+          Get-ChildItem ${{ env.API_PUBLISH_PATH }} | Compress-Archive -Destination ${{ env.API_NAME }}.zip
 
       # Upload the API Artifact
       - name: 'Upload API FunctionApp Artifact'
         uses: actions/upload-artifact@v1
         with:
-          name: api-artifact
-          path: ${{ env.API_OUTPUT_PATH }}
+          name: ${{ env.API_NAME }}-artifact
+          path: ${{ env.API_NAME }}.zip
+
+  DeployInfra:
+    name: Deploy Infrastructure (TEST)
+    runs-on: ubuntu-latest
+    needs: [PreviewInfra]
+    environment: test
+    outputs:
+      functionAppName: ${{ steps.deploy.outputs.functionAppName }}
+      storageAccountName: ${{ steps.deploy.outputs.storageAccountName }}
+      funcappStorageContainerName: ${{ steps.deploy.outputs.funcappStorageContainerName }}
+    steps:
+    - uses: azure/login@v1
+      name: Sign in to Azure
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    
+    - uses: actions/checkout@v2
+
+    - name: Deploy to Test resource group
+      id: deploy
+      shell: pwsh
+      run: |
+        $outputs = (az deployment group create `
+          -g ${{ env.AZURE_RESOURCEGROUP_NAME }} `
+          --mode Incremental `
+          --template-file .azure/azureDeploy.bicep `
+          --parameters .azure/parameters.json --query properties.outputs) | ConvertFrom-Json
+
+        Write-Output "::set-output name=functionAppName::$($outputs.functionAppName.value)"
+        Write-Output "::set-output name=storageAccountName::$($outputs.storageAccountName.value)"
+        Write-Output "::set-output name=funcappStorageContainerName::$($outputs.funcappStorageContainerName.value)"
+
+  DeployApp:
+    name: Deploy Function App (TEST)
+    runs-on: ubuntu-latest
+    needs: [DeployInfra, BuildApp]
+    steps:
+      # Log into Azure
+      - uses: azure/login@v1
+        name: Sign in to Azure
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      # Checkout the repo
+      - uses: actions/checkout@main
+
+      # Get the funcapp artifact
+      - name: Download Function App artifact
+        uses: actions/download-artifact@v1
+        with:
+          name: ${{ env.API_NAME }}-artifact
+          path: ${{ env.API_PUBLISH_PATH }}
+
+      # Upload the funcapp zip artifact to Azure 
+      # - name: "Upload FunctionApp"
+      #   uses: Azure/functions-action@v1.4.4
+      #   with:
+      #     app-name: ${{ needs.DeployInfra.outputs.functionAppName }}
+      #     package: ${{ env.API_PUBLISH_PATH }}
+
+      # - name: Upload FunctionApp
+      #   id: upload
+      #   shell: pwsh
+      #   run: |
+      #     az functionapp deployment source config-zip `
+      #       -g ${{ env.AZURE_RESOURCEGROUP_NAME }} `
+      #       -n ${{ needs.DeployInfra.outputs.functionAppName }} `
+      #       --src ${{ env.API_PUBLISH_PATH }}/${{ env.API_NAME }}.zip
+
+      - name: Upload FunctionApp to Storage
+        id: upload
+        shell: pwsh
+        run: |
+          $artifact="${{ env.API_PUBLISH_PATH }}/${{ env.API_NAME }}.zip"
+
+          $storageAccountName="${{ needs.DeployInfra.outputs.storageAccountName }}"
+          $resourceGroupName="${{ env.AZURE_RESOURCEGROUP_NAME }}"
+          $containerName="${{ needs.DeployInfra.outputs.funcappStorageContainerName }}"
+          $functionAppName="${{ needs.DeployInfra.outputs.functionAppName }}"
+
+          $timestamp=Get-Date -Format "yyyyMMddHHmmss"
+          $filename="$($timestamp).zip"
+          $packageUrl="https://$($storageAccountName).blob.core.windows.net/$($containerName)/$($filename)"
+          
+          Write-Host "Uploading package to url - $($packageUrl)"
+
+          # Using account key
+          # - but you can also assign yourself the Storage Blob Data Contributor role to the storage account in Access Control (IAM)
+          # - remember to then change to `--auth-mode login`
+          $accountKey=az storage account keys list -g $resourceGroupName -n $storageAccountName --query '[0].{value:value}' --output tsv
+
+          # note: setting socket timeout to 20000 -- seems like there is a recent bug introduced where 20 is interpreted as milliseconds instead of seconds
+          $upload=az storage blob upload `
+            --account-name $storageAccountName `
+            --account-key "$($accountKey)" `
+            --container-name "$($containerName)" `
+            --file "$($artifact)" `
+            --name $filename `
+            --socket-timeout 20000 `
+            --auth-mode key
+
+          if ($lastexitcode -ne 0) {
+            Write-Host $upload -ForegroundColor Red
+            Write-Error $_
+            exit 1;
+          }
+
+          Write-Host "Pointing FunctionApp to run from package $($packageUrl)" -ForegroundColor Green
+          $appSettings=az functionapp config appsettings set `
+            -g $resourceGroupName `
+            -n $functionAppName `
+            --settings "WEBSITE_RUN_FROM_PACKAGE=$($packageUrl)"
+
+          if ($lastexitcode -ne 0) {
+            Write-Host $appSettings -ForegroundColor Red
+            Write-Error $_
+            exit 1;
+          }

@@ -27,8 +27,16 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2021-06-01' = {
   }
 }
 
+var funcAppStorageContainerName = functionAppName
+resource funcAppStorageContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2021-04-01' = {
+  name: '${storageAccount.name}/default/${funcAppStorageContainerName}'
+  properties: {
+    publicAccess: 'None'
+  }
+}
+
 var funcAppHostingPlanName = functionAppName
-resource funcAppHostingPlan 'Microsoft.Web/serverfarms@2021-02-01' = {
+resource funcAppHostingPlan 'Microsoft.Web/serverfarms@2021-01-15' = {
   name: funcAppHostingPlanName
   location: location
   sku: {
@@ -38,9 +46,14 @@ resource funcAppHostingPlan 'Microsoft.Web/serverfarms@2021-02-01' = {
     family: 'Y'
     capacity: 0
   }
+  kind: 'functionapp'
+  properties: {
+    // https://docs.microsoft.com/en-us/azure/app-service/faq-app-service-linux#how-can-i-create-a-linux-app-service-plan-through-an-sdk-or-an-azure-resource-manager-template-
+    reserved: true
+  }
 }
 
-resource functionApp 'Microsoft.Web/sites@2021-02-01' = {
+resource functionApp 'Microsoft.Web/sites@2021-01-15' = {
   name: functionAppName
   location: location
   kind: 'functionapp,linux'
@@ -62,8 +75,8 @@ resource functionApp 'Microsoft.Web/sites@2021-02-01' = {
           value: 'dotnet'
         }
         {
-          name: 'AzureWebJobsStorage'
-          value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccount.name};EndpointSuffix=${environment().suffixes.storage};AccountKey=${listKeys(storageAccount.id, storageAccount.apiVersion).keys[0].value}'
+          name: 'AzureWebJobsStorage__accountName'
+          value: storageAccount.name
         }
         {
           name: 'FUNCTIONS_EXTENSION_VERSION'
@@ -76,14 +89,6 @@ resource functionApp 'Microsoft.Web/sites@2021-02-01' = {
         {
           name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
           value: appInsights.properties.ConnectionString
-        }
-        {
-          name: 'WEBSITE_CONTENTAZUREFILECONNECTIONSTRING'
-          value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccountName};EndpointSuffix=${environment().suffixes.storage};AccountKey=${listKeys(storageAccount.id, '2019-06-01').keys[0].value}'
-        }
-        {
-          name: 'WEBSITE_CONTENTSHARE'
-          value: toLower(functionAppName)
         }
       ]
     }
@@ -140,3 +145,6 @@ resource monitoringMetricsPublisherRole 'Microsoft.Authorization/roleAssignments
 }
 
 output principalId string = functionApp.identity.principalId
+output functionAppName string = functionApp.name
+output storageAccountName string = storageAccount.name
+output funcappStorageContainerName string = funcAppStorageContainerName
