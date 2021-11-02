@@ -40,6 +40,7 @@ resource funcAppHostingPlan 'Microsoft.Web/serverfarms@2021-01-15' = {
   }
   kind: 'functionapp'
   properties: {
+    // https://docs.microsoft.com/en-us/azure/app-service/faq-app-service-linux#how-can-i-create-a-linux-app-service-plan-through-an-sdk-or-an-azure-resource-manager-template-
     reserved: true
   }
 }

@@ -118,12 +118,17 @@ jobs:
           dotnet publish BicepFlex.API.csproj --configuration Release --output ${{ env.API_PUBLISH_PATH }}
           popd
 
+      - name: "Create ZIP"
+        shell: pwsh
+        run: |
+          Get-ChildItem ${{ env.API_PUBLISH_PATH }} | Compress-Archive -Destination ${{ env.API_NAME }}.zip
+
       # Upload the API Artifact
       - name: 'Upload API FunctionApp Artifact'
         uses: actions/upload-artifact@v1
         with:
           name: ${{ env.API_NAME }}-artifact
-          path: ${{ env.API_PUBLISH_PATH }}
+          path: ${{ env.API_NAME }}.zip
 
   DeployApp:
     name: Deploy Function App (TEST)
@@ -139,7 +144,7 @@ jobs:
       # Checkout the repo
       - uses: actions/checkout@main
 
-      # Get the funcapp zip artifact
+      # Get the funcapp artifact
       - name: Download Function App artifact
         uses: actions/download-artifact@v1
         with:
@@ -147,8 +152,17 @@ jobs:
           path: ${{ env.API_PUBLISH_PATH }}
 
       # Upload the funcapp zip artifact to Azure 
-      - name: "Upload FunctionApp"
-        uses: Azure/functions-action@v1.4.4
-        with:
-          app-name: ${{ needs.DeployInfra.outputs.functionAppName }}
-          package: ${{ env.API_PUBLISH_PATH }}
+      # - name: "Upload FunctionApp"
+      #   uses: Azure/functions-action@v1.4.4
+      #   with:
+      #     app-name: ${{ needs.DeployInfra.outputs.functionAppName }}
+      #     package: ${{ env.API_PUBLISH_PATH }}
+
+      - name: Upload FunctionApp
+        id: upload
+        shell: pwsh
+        run: |
+          az functionapp deployment source config-zip `
+            -g ${{ env.AZURE_RESOURCEGROUP_NAME }} `
+            -n ${{ needs.DeployInfra.outputs.functionAppName }} `
+            --src ${{ env.API_PUBLISH_PATH }}/${{ env.API_NAME }}.zip
