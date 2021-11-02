@@ -71,35 +71,6 @@ jobs:
           --template-file .azure/azureDeploy.bicep `
           --parameters .azure/parameters.json
 
-  DeployInfra:
-    name: Deploy Infrastructure (TEST)
-    runs-on: ubuntu-latest
-    needs: [PreviewInfra]
-    environment: test
-    outputs:
-      functionAppName: ${{ steps.deploy.outputs.functionAppName }}
-      storageAccountName: ${{ steps.deploy.outputs.storageAccountName }}
-    steps:
-    - uses: azure/login@v1
-      name: Sign in to Azure
-      with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
-    
-    - uses: actions/checkout@v2
-
-    - name: Deploy to Test resource group
-      id: deploy
-      shell: pwsh
-      run: |
-        $outputs = (az deployment group create `
-          -g ${{ env.AZURE_RESOURCEGROUP_NAME }} `
-          --mode Incremental `
-          --template-file .azure/azureDeploy.bicep `
-          --parameters .azure/parameters.json --query properties.outputs) | ConvertFrom-Json
-
-        Write-Output "::set-output name=functionAppName::$($outputs.functionAppName.value)"
-        Write-Output "::set-output name=storageAccountName::$($outputs.storageAccountName.value)"
-
   BuildApp:
     name: Build Function App
     runs-on: ubuntu-latest
@@ -131,6 +102,35 @@ jobs:
         with:
           name: ${{ env.API_NAME }}-artifact
           path: ${{ env.API_NAME }}.zip
+
+  DeployInfra:
+    name: Deploy Infrastructure (TEST)
+    runs-on: ubuntu-latest
+    needs: [PreviewInfra]
+    environment: test
+    outputs:
+      functionAppName: ${{ steps.deploy.outputs.functionAppName }}
+      storageAccountName: ${{ steps.deploy.outputs.storageAccountName }}
+    steps:
+    - uses: azure/login@v1
+      name: Sign in to Azure
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    
+    - uses: actions/checkout@v2
+
+    - name: Deploy to Test resource group
+      id: deploy
+      shell: pwsh
+      run: |
+        $outputs = (az deployment group create `
+          -g ${{ env.AZURE_RESOURCEGROUP_NAME }} `
+          --mode Incremental `
+          --template-file .azure/azureDeploy.bicep `
+          --parameters .azure/parameters.json --query properties.outputs) | ConvertFrom-Json
+
+        Write-Output "::set-output name=functionAppName::$($outputs.functionAppName.value)"
+        Write-Output "::set-output name=storageAccountName::$($outputs.storageAccountName.value)"
 
   DeployApp:
     name: Deploy Function App (TEST)
@@ -173,10 +173,10 @@ jobs:
         id: upload
         shell: pwsh
         run: |
-          $storageAccountName=${{ needs.DeployInfra.outputs.storageAccountName }}
-          $resourceGroupName=${{ env.AZURE_RESOURCEGROUP_NAME }}
-          $containerName=funcapp
-          $functionAppName=${{ needs.DeployInfra.outputs.functionAppName }}
+          $storageAccountName="${{ needs.DeployInfra.outputs.storageAccountName }}"
+          $resourceGroupName="${{ env.AZURE_RESOURCEGROUP_NAME }}"
+          $containerName="funcapp"
+          $functionAppName="${{ needs.DeployInfra.outputs.functionAppName }}"
 
           $timestamp=Get-Date -Format "yyyyMMddHHmmss"
           $filename="$($timestamp).zip"
