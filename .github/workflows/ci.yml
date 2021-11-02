@@ -173,6 +173,8 @@ jobs:
         id: upload
         shell: pwsh
         run: |
+          $artifact="${{ env.API_PUBLISH_PATH }}/${{ env.API_NAME }}.zip"
+
           $storageAccountName="${{ needs.DeployInfra.outputs.storageAccountName }}"
           $resourceGroupName="${{ env.AZURE_RESOURCEGROUP_NAME }}"
           $containerName="funcapp"
@@ -181,7 +183,7 @@ jobs:
           $timestamp=Get-Date -Format "yyyyMMddHHmmss"
           $filename="$($timestamp).zip"
           $packageUrl="https://$($storageAccountName).blob.core.windows.net/$($containerName)/$($filename)"
-
+          
           Write-Host "Uploading package to url - $($packageUrl)"
 
           # Using account key
@@ -194,7 +196,7 @@ jobs:
             --account-name $storageAccountName `
             --account-key "$($accountKey)" `
             --container-name "$($containerName)" `
-            --file "$($zipfolder)/$($filename)" `
+            --file "$($artifact)" `
             --name $filename `
             --socket-timeout 20000 `
             --auth-mode key
