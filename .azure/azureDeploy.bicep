@@ -27,6 +27,13 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2021-06-01' = {
   }
 }
 
+resource funcAppStorageContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2021-04-01' = {
+  name: '${storageAccount.name}/default/${functionAppName}'
+  properties: {
+    publicAccess: 'None'
+  }
+}
+
 var funcAppHostingPlanName = functionAppName
 resource funcAppHostingPlan 'Microsoft.Web/serverfarms@2021-01-15' = {
   name: funcAppHostingPlanName
@@ -139,3 +146,4 @@ resource monitoringMetricsPublisherRole 'Microsoft.Authorization/roleAssignments
 output principalId string = functionApp.identity.principalId
 output functionAppName string = functionApp.name
 output storageAccountName string = storageAccount.name
+output funcappStorageContainerName string = funcAppStorageContainer.name

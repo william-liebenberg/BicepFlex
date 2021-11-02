@@ -111,6 +111,7 @@ jobs:
     outputs:
       functionAppName: ${{ steps.deploy.outputs.functionAppName }}
       storageAccountName: ${{ steps.deploy.outputs.storageAccountName }}
+      funcappStorageContainerName: ${{ steps.deploy.outputs.funcappStorageContainerName }}
     steps:
     - uses: azure/login@v1
       name: Sign in to Azure
@@ -131,6 +132,7 @@ jobs:
 
         Write-Output "::set-output name=functionAppName::$($outputs.functionAppName.value)"
         Write-Output "::set-output name=storageAccountName::$($outputs.storageAccountName.value)"
+        Write-Output "::set-output name=funcappStorageContainerName::$($outputs.funcappStorageContainerName.value)"
 
   DeployApp:
     name: Deploy Function App (TEST)
@@ -177,7 +179,7 @@ jobs:
 
           $storageAccountName="${{ needs.DeployInfra.outputs.storageAccountName }}"
           $resourceGroupName="${{ env.AZURE_RESOURCEGROUP_NAME }}"
-          $containerName="funcapp"
+          $containerName="${{ needs.DeployInfra.outputs.funcappStorageContainerName }}"
           $functionAppName="${{ needs.DeployInfra.outputs.functionAppName }}"
 
           $timestamp=Get-Date -Format "yyyyMMddHHmmss"
