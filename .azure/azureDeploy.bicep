@@ -138,3 +138,4 @@ resource monitoringMetricsPublisherRole 'Microsoft.Authorization/roleAssignments
 
 output principalId string = functionApp.identity.principalId
 output functionAppName string = functionApp.name
+output storageAccountName string = storageAccount.name

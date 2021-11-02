@@ -78,6 +78,7 @@ jobs:
     environment: test
     outputs:
       functionAppName: ${{ steps.deploy.outputs.functionAppName }}
+      storageAccountName: ${{ steps.deploy.outputs.storageAccountName }}
     steps:
     - uses: azure/login@v1
       name: Sign in to Azure
@@ -97,6 +98,7 @@ jobs:
           --parameters .azure/parameters.json --query properties.outputs) | ConvertFrom-Json
 
         Write-Output "::set-output name=functionAppName::$($outputs.functionAppName.value)"
+        Write-Output "::set-output name=storageAccountName::$($outputs.storageAccountName.value)"
 
   BuildApp:
     name: Build Function App
@@ -158,11 +160,59 @@ jobs:
       #     app-name: ${{ needs.DeployInfra.outputs.functionAppName }}
       #     package: ${{ env.API_PUBLISH_PATH }}
 
-      - name: Upload FunctionApp
+      # - name: Upload FunctionApp
+      #   id: upload
+      #   shell: pwsh
+      #   run: |
+      #     az functionapp deployment source config-zip `
+      #       -g ${{ env.AZURE_RESOURCEGROUP_NAME }} `
+      #       -n ${{ needs.DeployInfra.outputs.functionAppName }} `
+      #       --src ${{ env.API_PUBLISH_PATH }}/${{ env.API_NAME }}.zip
+
+      - name: Upload FunctionApp to Storage
         id: upload
         shell: pwsh
         run: |
-          az functionapp deployment source config-zip `
-            -g ${{ env.AZURE_RESOURCEGROUP_NAME }} `
-            -n ${{ needs.DeployInfra.outputs.functionAppName }} `
-            --src ${{ env.API_PUBLISH_PATH }}/${{ env.API_NAME }}.zip
+          $storageAccountName=${{ needs.DeployInfra.outputs.storageAccountName }}
+          $resourceGroupName=${{ env.AZURE_RESOURCEGROUP_NAME }}
+          $containerName=funcapp
+          $functionAppName=${{ needs.DeployInfra.outputs.functionAppName }}
+
+          $timestamp=Get-Date -Format "yyyyMMddHHmmss"
+          $filename="$($timestamp).zip"
+          $packageUrl="https://$($storageAccountName).blob.core.windows.net/$($containerName)/$($filename)"
+
+          Write-Host "Uploading package to url - $($packageUrl)"
+
+          # Using account key
+          # - but you can also assign yourself the Storage Blob Data Contributor role to the storage account in Access Control (IAM)
+          # - remember to then change to `--auth-mode login`
+          $accountKey=az storage account keys list -g $resourceGroupName -n $storageAccountName --query '[0].{value:value}' --output tsv
+
+          # note: setting socket timeout to 20000 -- seems like there is a recent bug introduced where 20 is interpreted as milliseconds instead of seconds
+          $upload=az storage blob upload `
+            --account-name $storageAccountName `
+            --account-key "$($accountKey)" `
+            --container-name "$($containerName)" `
+            --file "$($zipfolder)/$($filename)" `
+            --name $filename `
+            --socket-timeout 20000 `
+            --auth-mode key
+
+          if ($lastexitcode -ne 0) {
+            Write-Host $upload -ForegroundColor Red
+            Write-Error $_
+            exit 1;
+          }
+
+          Write-Host "Pointing FunctionApp to run from package $($packageUrl)" -ForegroundColor Green
+          $appSettings=az functionapp config appsettings set `
+            -g $resourceGroupName `
+            -n $functionAppName `
+            --settings "WEBSITE_RUN_FROM_PACKAGE=$($packageUrl)"
+
+          if ($lastexitcode -ne 0) {
+            Write-Host $appSettings -ForegroundColor Red
+            Write-Error $_
+            exit 1;
+          }
