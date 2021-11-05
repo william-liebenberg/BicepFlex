@@ -9,6 +9,11 @@ $subscriptionId =  az account show --query 'id' -o tsv
 $servicePrincipal = az ad sp create-for-rbac `
 	--name "BicepFlex-GHActions" `
 	--role contributor `
+	--sdk-auth `
 	--scopes /subscriptions/$subscriptionId
+
+az role assignment create --assignee "$($servicePrincipal.clientId)" `
+	--role "User Access Administrator" `
+	--subscription $subscriptionId
 
 gh secret set AZURE_CREDENTIALS -b "$servicePrincipal"
