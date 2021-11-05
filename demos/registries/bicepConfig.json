@@ -1,0 +1,36 @@
+{
+  "moduleAliases": {
+    "br": {
+      "bicepflex": {
+        "registry": "bicepflex.azurecr.io",
+        "modulePath": "bicep/modules"
+      }
+    }
+  },
+  "analyzers": {
+    "core": {
+      "enabled": true,
+      "verbose": true,
+      "rules": {
+        "no-hardcoded-env-urls": {
+          "level": "error"
+        },
+        "no-unused-params": {
+          "level": "error"
+        },
+        "no-unused-vars": {
+          "level": "error"
+        },
+        "prefer-interpolation": {
+          "level": "error"
+        },
+        "secure-parameter-default": {
+          "level": "error"
+        },
+        "simplify-interpolation": {
+          "level": "error"
+        }
+      }
+    }
+  }
+}
