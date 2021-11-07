@@ -29,7 +29,7 @@ Once complete, modify the `moduleAliases` section of the `fullstack-webapp/bicep
 
 By adding a module alias, we are able to simplify the module references in our bicep files.
 
-```js
+```pascal
 // module <symbolic name> 'br/<alias>:<module>:<tag>
 module keyVault 'br/bicepflex:keyvault:v1.0' = { ... }
 
