@@ -43,20 +43,8 @@ catch {
 	exit 1;
 }
 
-$rgExists = az group exists -n $resourceGroup
-if ($rgExists -eq $false) {
-	Write-Host "🔨 Creating Resource Group $($resourceGroup)" -ForegroundColor Yellow
-	$result = az group create -l $location -n $resourceGroup
-	if (!$?) {
-		Write-Host "❌ Could not create Resource Group $($resourceGroup)" -ForegroundColor Red
-		Write-Host $result -ForegroundColor Red
-		return $false;
-	}
-	Write-Host "✅ Created Resource Group $($resourceGroup)" -ForegroundColor Green
-}
-else {
-	Write-Host "✅ Resource Group $($resourceGroup) Exists" -ForegroundColor Green
-}
+Write-Host "🔨 Creating Resource Group $($resourceGroup)" -ForegroundColor Yellow
+az group create -l $location -n $resourceGroup
 
 Write-Host "👀 Running What-If on your Bicep file..." -ForegroundColor Cyan
 az deployment group what-if `

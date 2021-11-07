@@ -119,6 +119,7 @@ resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
 }
 
 // Storage Blob Data Contributor
+// az role definition list --name "Storage Blob Data Contributor" --output tsv --query '[].{name:name}'
 var storageBlobDataContributorRoleName = 'ba92f5b4-2d11-453d-a403-e96b0029c9fe'
 
 resource blobStorageRole 'Microsoft.Authorization/roleAssignments@2020-04-01-preview' = {
@@ -132,6 +133,7 @@ resource blobStorageRole 'Microsoft.Authorization/roleAssignments@2020-04-01-pre
 }
 
 // Monitoring Metrics Publisher
+// az role definition list --name "Monitoring Metrics Publisher" --output tsv --query '[].{name:name}'
 var monitoringMetricsPublisherRoleName = '3913510d-42f4-4e42-8a64-420c390055eb'
 
 resource monitoringMetricsPublisherRole 'Microsoft.Authorization/roleAssignments@2020-04-01-preview' = {
