@@ -1,15 +1,24 @@
+param (
+	[Parameter(Mandatory = $true)]
+    [string]$ResourceGroup,
+
+    [Parameter(Mandatory = $true)]
+    [string]$RegistryName
+)
+
 Write-Host
 Write-Host "🔨 - Creating Resource Group" -ForegroundColor Yellow
 Write-Host
-az group create --name BicepFlexRegistry --location australiaeast
+az group create --name $ResourceGroup --location australiaeast
 
 Write-Host
 Write-Host "🔨 - BicepFlex Azure Container Registry" -ForegroundColor Yellow
 Write-Host
 az deployment group create `
-    --resource-group BicepFlexRegistry `
+    --resource-group $ResourceGroup `
     --template-file acr.bicep `
-    --parameters acrName=BicepFlex `
+    --parameters acrName=$RegistryName `
+    --verbose `
     --query properties.outputs
 
 Write-Host

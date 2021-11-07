@@ -31,51 +31,17 @@ param tags object = {
 
 @description('Secret API Key - to be stored in KeyVault')
 @secure()
-param secretApiKey string = ''
+param secretApiKey string
 
 @description('The desired performance tier for the SQL Database')
-@allowed([
-  'Basic'
-  'S0'
-  'S1'
-  'S2'
-  'P1'
-  'P2'
-  'P3'
-])
 param databasePerformanceTier string = 'Basic'
 
 @description('The desired performance tier for the WebApp')
-@allowed([
-  'B1'
-  'B2'
-  'B3'
-  'D1'
-  'F1'
-  'FREE'
-  'I1'
-  'I1v2'
-  'I2'
-  'I2v2'
-  'I3'
-  'I3v2'
-  'P1V2'
-  'P1V3'
-  'P2V2'
-  'P2V3'
-  'P3V2'
-  'P3V3'
-  'PC2'
-  'PC3'
-  'PC4'
-  'S1'
-  'S2'
-  'S3'
-])
 param webappPerformanceTier string = 'P1V2'
 
 // Call a separate bicep file to deploy the KeyVault and secrets
-module keyVault 'br:bicepflex.azurecr.io/bicep/modules/keyvault:v1.2' = {
+// notice we are using the module alias to shorten the reference
+module keyVault 'br/bicepflex:keyvault:v1.0' = {
   name: '${projectName}-keyVault-${lastDeploymentDate}'
   scope: resourceGroup()
   params: {
@@ -87,7 +53,8 @@ module keyVault 'br:bicepflex.azurecr.io/bicep/modules/keyvault:v1.2' = {
 }
 
 // Call a separate bicep file to deploy the attachment storage account
-module storage 'br:bicepflex.azurecr.io/bicep/modules/storage:v1.2' = {
+// notice we are using the module alias to shorten the reference
+module storage 'br/bicepflex:storage:v1.0' = {
   name: '${projectName}-storage-${lastDeploymentDate}'
   scope: resourceGroup()
   params: {
@@ -99,7 +66,8 @@ module storage 'br:bicepflex.azurecr.io/bicep/modules/storage:v1.2' = {
   }
 }
 
-module database 'br:bicepflex.azurecr.io/bicep/modules/sqldatabase:v1.2' = {
+// notice we are using the module alias to shorten the reference
+module database 'br/bicepflex:sqldatabase:v1.0' = {
   name: '${projectName}-database-${lastDeploymentDate}'
   scope: resourceGroup()
   params: {
@@ -111,7 +79,8 @@ module database 'br:bicepflex.azurecr.io/bicep/modules/sqldatabase:v1.2' = {
   }
 }
 
-module webapp 'br:bicepflex.azurecr.io/bicep/modules/webapp:v1.2' = {
+// notice we are using the module alias to shorten the reference
+module webapp 'br/bicepflex:webapp:v1.0' = {
   name: '${projectName}-webapp-${lastDeploymentDate}'
   scope: resourceGroup()
   params: {
