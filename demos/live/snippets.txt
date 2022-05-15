@@ -1,0 +1,22 @@
+az group create --name azsyd-live --location australiaeast
+
+az deployment group create --resource-group azsydlive --template-file ./storage.bicep —verbose
+
+param accname string = 'demo'
+var prefix = 'stg'
+var entropy = uniqueString(accname, resourceGroup().id)
+var finalName = toLower(replace(take('${accname}${prefix}${take(entropy,6)}', 24), '-',''))
+
+resource storageaccount 'Microsoft.Storage/storageAccounts@2021-02-01' = {
+  name: finalName
+  location: resourceGroup().location
+  kind: 'StorageV2'
+  sku: {
+    name: 'Premium_LRS'
+  }
+  properties: {
+    allowBlobPublicAccess: false
+    minimumTlsVersion: 'TLS1_2'
+  }
+}
+

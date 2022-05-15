@@ -4,9 +4,6 @@ param projectName string
 @description('The environment that this project is being deployed to. (eg. Dev, Test, Staging, Prod)')
 param environmentName string
 
-//@description('Datacenter location for your azure resources')
-//param location string = resourceGroup().location
-
 @description('Resource tags for organizing / cost monitoring')
 param tags object
 
@@ -36,7 +33,7 @@ var sqlAdminPassword = '#${take(entropy,12)}X!'
 
 resource sqlServer 'Microsoft.Sql/servers@2021-02-01-preview' ={
   name: sqlServerName
-  location: 'WestUS2'
+  location: 'WestUs'
   tags: tags
   identity: {
     type: 'SystemAssigned'
@@ -45,23 +42,11 @@ resource sqlServer 'Microsoft.Sql/servers@2021-02-01-preview' ={
     administratorLogin: sqlAdminUsername
     administratorLoginPassword: sqlAdminPassword
   }
-
-  // resource sqlServerDatabase 'databases@2021-02-01-preview' = {
-  //   name: sqlDatabseName
-  //   location: 'WestUS'
-  //   tags: tags
-  //   sku: {
-  //     name: performanceTier
-  //   }
-  //   properties: {
-  //     collation: 'SQL_Latin1_General_CP1_CI_AS'
-  //   }
-  // }
 }
 
 resource sqlServerDatabase 'Microsoft.Sql/servers/databases@2021-02-01-preview' = {
   name: '${sqlServerName}/${sqlDatabseName}'
-  location: 'WestUS2'
+  location: 'WestUS'
   tags: tags
   sku: {
     name: performanceTier
@@ -81,9 +66,7 @@ resource keyvault 'Microsoft.KeyVault/vaults@2019-09-01' existing = {
   resource sqlConnectionStringSecret 'secrets' = {
     name: 'ConnectionStrings--DefaultConnection'
     tags: tags
-    dependsOn: [
-      keyvault
-    ]
+
     properties: {
       value: 'Data Source=tcp:${sqlServer.properties.fullyQualifiedDomainName},1433;Initial Catalog=${sqlDatabseName};User Id=${sqlAdminUsername};Password=${sqlAdminPassword};'
       contentType: 'string'

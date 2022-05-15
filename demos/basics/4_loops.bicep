@@ -42,10 +42,12 @@ module stgModule1 'storageAccount.bicep' = [for i in range(0, storageCount): {
 // --------------
 
 param storageNames array = [
-  'jakob'
-  'steinar'
-  'heather'
-  'kjersti'
+  'simon'
+  'sally'
+  'sam'
+  'stephane'
+  'arafat'
+  'alexandre'
 ]
 
 module stgModule2 'storageAccount.bicep' = [for name in storageNames: {

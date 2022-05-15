@@ -1,8 +1,8 @@
-param projectName string = 'NDCSydney2021'
+param projectName string = 'AzureSydneyUG'
 param environmentName string = 'dev'
 param tags object = {
   module: 'fullstack-webapp'
-  event: 'NDCSydney2021'
+  event: 'AzureSydneyUG'
 }
 
 var baseName = 'webapp${take(uniqueString(resourceGroup().id), 6)}'
