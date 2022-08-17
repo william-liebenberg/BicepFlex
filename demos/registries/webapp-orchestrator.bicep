@@ -1,13 +1,13 @@
-param projectName string = 'NDCSydney2021'
+param projectName string = 'NETUG2022'
 param environmentName string = 'dev'
 param tags object = {
   module: 'fullstack-webapp'
-  event: 'NDCSydney2021'
+  event: 'Melbourne Livestream'
 }
 
 var baseName = 'webapp${take(uniqueString(resourceGroup().id), 6)}'
 
-module webapp 'br:bicepflex.azurecr.io/bicep/modules/fullstack-webapp:v1.0' = {
+module webapp 'br:acr-netug2022.azurecr.io/bicep/modules/fullstack-webapp:v1.0' = {
   name: 'deploy-${baseName}'
   params: {
     tags: tags

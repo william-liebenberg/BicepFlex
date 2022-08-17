@@ -1,8 +1,8 @@
 {
   "moduleAliases": {
     "br": {
-      "bicepflex": {
-        "registry": "bicepflex.azurecr.io",
+      "netug2022": {
+        "registry": "acr-netug2022.azurecr.io",
         "modulePath": "bicep/modules"
       }
     }

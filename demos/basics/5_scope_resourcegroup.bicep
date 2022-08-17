@@ -2,8 +2,8 @@
 // resource deployed to target resource group
 //
 // az deployment group create \
-//   --name NDCSydneyDeployment \
-//   --resource-group NDCSydneyRG \
+//   --name Deploy-NetUG2022 \
+//   --resource-group NetUG2022 \
 //   --template-file scopes.bicep
 //
 // ------------------------------------------

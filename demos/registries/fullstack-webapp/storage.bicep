@@ -61,6 +61,8 @@ resource attachmentsBlobContainer 'Microsoft.Storage/storageAccounts/blobService
 resource keyvault 'Microsoft.KeyVault/vaults@2019-09-01' existing = {
   name: keyVaultName
 
+  // TODO: Use SAS or Managed
+
   // Add the Storage Account connection string to KeyVault
   resource attachmentStorageAccountConnectionStringSecret 'secrets' = {
     name: 'ConnectionStrings--AttachmentsStorageAccount'
