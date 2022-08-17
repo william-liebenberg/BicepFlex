@@ -1,7 +1,9 @@
 @description('Use geo-replication for storage')
 param enableGeoReplication bool = true
 
-resource storageaccount 'Microsoft.Storage/storageAccounts@2021-02-01' = {
+param needAStorageAccount bool = false
+
+resource storageaccount 'Microsoft.Storage/storageAccounts@2021-02-01' = if(needAStorageAccount) {
   name: 'name'
   location: resourceGroup().location
   kind: 'StorageV2'
@@ -10,5 +12,3 @@ resource storageaccount 'Microsoft.Storage/storageAccounts@2021-02-01' = {
     name: enableGeoReplication ? 'Standard_GRS' : 'Premium_LRS'
   }
 }
-
-

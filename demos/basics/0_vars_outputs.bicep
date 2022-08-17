@@ -9,7 +9,7 @@ param location string = 'australiaeast'
 
 @description('Name of your project')
 @maxLength(32)
-param projectName string = 'NDCSydney2021'
+param projectName string = 'NetUg2022'
 
 @description('AppService horizontal scale intances')
 @minValue(1)

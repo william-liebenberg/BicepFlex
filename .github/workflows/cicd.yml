@@ -8,7 +8,6 @@ env:
   API_NAME: bicepflex
   API_CODE_PATH: './src/api'
   API_PUBLISH_PATH: '${{ github.workspace }}/publish'
-  API_DOTNET_VERSION: '3.1.x'
 
 jobs:
   LintInfra: 
@@ -69,7 +68,7 @@ jobs:
       - name: Setup .NET Core
         uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: ${{ env.API_DOTNET_VERSION }} 
+          global-json-file: global.json
       
       # Run dotnet to build/publish the API FunctionApp
       - name: Publish API

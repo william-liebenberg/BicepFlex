@@ -1,9 +1,9 @@
 param (
-	[Parameter(Mandatory = $true)]
-    [string]$ResourceGroup,
+	[Parameter(Mandatory = $false)]
+    [string]$ResourceGroup = "netug2022",
 
-    [Parameter(Mandatory = $true)]
-    [string]$ProjectName,
+    [Parameter(Mandatory = $false)]
+    [string]$ProjectName = "netug2022",
 
     [Parameter(Mandatory = $false)]
     [string]$EnvironmentName = "dev",
@@ -18,9 +18,10 @@ Write-Host
 az group create --name $ResourceGroup --location $Location
 
 Write-Host
-Write-Host "🔨 - Deploying BicepFlex Fullstack WebApp (from private registry)" -ForegroundColor Yellow
+Write-Host "📦 - Deploying Fullstack WebApp (from private registry)" -ForegroundColor Yellow
 Write-Host
 az deployment group create `
+    --name 'deploy-webapp-netug2022' `
     --resource-group $ResourceGroup `
     --template-file webapp-orchestrator.bicep `
     --parameters projectName="$($ProjectName)" environmentName="$($EnvironmentName)" `
@@ -29,4 +30,4 @@ az deployment group create `
     --output yaml
 
 Write-Host
-Write-Host "✔️ - Done" -ForegroundColor Green
+Write-Host "✅ - Done" -ForegroundColor Green

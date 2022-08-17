@@ -7,9 +7,9 @@ param storageCount int = 2
 var baseName = 'storage${take(uniqueString(resourceGroup().id), 6)}'
 
 module stgModule1 'storageAccount.bicep' = [for i in range(0, storageCount): {
-  name: '${i}deploy${baseName}'
+  name: 'deploy${baseName}-${i}'
   params: {
-    storageAccountName: '${i}deploy${baseName}'
+    storageAccountName: 'deploy${baseName}-${i}'
   }
 }]
 
@@ -42,10 +42,10 @@ module stgModule1 'storageAccount.bicep' = [for i in range(0, storageCount): {
 // --------------
 
 param storageNames array = [
-  'jakob'
-  'steinar'
-  'heather'
-  'kjersti'
+  'wicksy'
+  'goldie'
+  'cookie'
+  'greentree'
 ]
 
 module stgModule2 'storageAccount.bicep' = [for name in storageNames: {

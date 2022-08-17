@@ -1,9 +1,9 @@
 param (
-	[Parameter(Mandatory = $true)]
-    [string]$ResourceGroup,
+	[Parameter(Mandatory = $false)]
+    [string]$ResourceGroup = "netug2022",
 
-    [Parameter(Mandatory = $true)]
-    [string]$RegistryName
+    [Parameter(Mandatory = $false)]
+    [string]$RegistryName = "acr-netug2022"
 )
 
 Write-Host
@@ -12,9 +12,10 @@ Write-Host
 az group create --name $ResourceGroup --location australiaeast
 
 Write-Host
-Write-Host "🔨 - BicepFlex Azure Container Registry" -ForegroundColor Yellow
+Write-Host "📦 - Deploying Azure Container Registry" -ForegroundColor Yellow
 Write-Host
 az deployment group create `
+    --name 'deploy-acr-netug2022' `
     --resource-group $ResourceGroup `
     --template-file acr.bicep `
     --parameters acrName=$RegistryName `
@@ -22,4 +23,4 @@ az deployment group create `
     --query properties.outputs
 
 Write-Host
-Write-Host "✔️ - Done" -ForegroundColor Green
+Write-Host "✅ - Done" -ForegroundColor Green
