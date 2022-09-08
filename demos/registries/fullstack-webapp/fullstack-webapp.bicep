@@ -41,7 +41,7 @@ param webappPerformanceTier string = 'P1V2'
 
 // Call a separate bicep file to deploy the KeyVault and secrets
 // notice we are using the module alias to shorten the reference
-module keyVault 'br/netug2022:keyvault:v1.0' = {
+module keyVault 'br/netug2022:keyvault:v1.2' = {
   name: '${projectName}-keyVault-${lastDeploymentDate}'
   scope: resourceGroup()
   params: {
@@ -54,7 +54,7 @@ module keyVault 'br/netug2022:keyvault:v1.0' = {
 
 // Call a separate bicep file to deploy the attachment storage account
 // notice we are using the module alias to shorten the reference
-module storage 'br/netug2022:storage:v1.0' = {
+module storage 'br/netug2022:storage:v1.2' = {
   name: '${projectName}-storage-${lastDeploymentDate}'
   scope: resourceGroup()
   params: {
@@ -67,7 +67,7 @@ module storage 'br/netug2022:storage:v1.0' = {
 }
 
 // notice we are using the module alias to shorten the reference
-module database 'br/netug2022:sqldatabase:v1.0' = {
+module database 'br/netug2022:sqldatabase:v1.2' = {
   name: '${projectName}-database-${lastDeploymentDate}'
   scope: resourceGroup()
   params: {
@@ -80,7 +80,7 @@ module database 'br/netug2022:sqldatabase:v1.0' = {
 }
 
 // notice we are using the module alias to shorten the reference
-module webapp 'br/netug2022:webapp:v1.0' = {
+module webapp 'br/netug2022:webapp:v1.2' = {
   name: '${projectName}-webapp-${lastDeploymentDate}'
   scope: resourceGroup()
   params: {

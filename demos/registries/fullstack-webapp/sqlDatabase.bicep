@@ -1,4 +1,4 @@
-param location string = 'WestUS2'
+param location string = 'eastus'
 
 @description('Name of this project')
 param projectName string

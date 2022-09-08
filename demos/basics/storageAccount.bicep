@@ -4,9 +4,11 @@ param storageAccountName string
 @description('Use Geo-Replication storage account')
 param useGeoReplication bool = false
 
+param location string = resourceGroup().location
+
 resource storageAccount 'Microsoft.Storage/storageAccounts@2021-02-01' = {
   name: storageAccountName
-  location: resourceGroup().location
+  location: location
   kind: 'StorageV2'
   sku: {
     name: useGeoReplication ? 'Standard_GRS' : 'Premium_LRS'

@@ -3,7 +3,7 @@ param (
     [string]$ResourceGroup = "netug2022",
 
     [Parameter(Mandatory = $false)]
-    [string]$RegistryName = "acr-netug2022"
+    [string]$RegistryName = "acrnetug2022"
 )
 
 Write-Host
