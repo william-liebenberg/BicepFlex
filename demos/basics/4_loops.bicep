@@ -9,7 +9,7 @@ var baseName = 'storage${take(uniqueString(resourceGroup().id), 6)}'
 module stgModule1 'storageAccount.bicep' = [for i in range(0, storageCount): {
   name: 'deploy${baseName}-${i}'
   params: {
-    storageAccountName: 'deploy${baseName}-${i}'
+    storageAccountName: 'deploy${baseName}${i}'
   }
 }]
 
