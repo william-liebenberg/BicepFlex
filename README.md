@@ -1,6 +1,8 @@
 # Flexing your Biceps with Azure
 
-Source code and slides from my NDC Sydney 2021 talk - [Flexing your Biceps with Azure](https://ndcsydney.com/agenda/flexing-your-biceps-with-azure-0p4l/0alw1a94vk5)
+Watch a recording of my talk at the August .NET user group at SSW on [YouTube](https://www.youtube.com/watch?v=gv_SFEBZ1WU)
+
+Grab the slides: [Flexing you Biceps with Azure - PDF](https://github.com/william-liebenberg/BicepFlex/blob/main/Flexing%20your%20Biceps%20-%20Melbourne%20.NET%20UG%20-%20August%202022.pdf)
 
 ## Demos
 
